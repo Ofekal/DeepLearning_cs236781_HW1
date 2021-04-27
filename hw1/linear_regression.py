@@ -163,7 +163,24 @@ def top_correlated_features(df: DataFrame, target_feature, n=5):
     # TODO: Calculate correlations with target and sort features by it
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    target_column = df[target_feature]
+    target_feature_mean = df.mean()[target_feature]
+    target_feature_var = df.var()[target_feature]
+    correlation_dict = {}
+    top_n_corr = []
+    top_n_features = []
+    for column in df:
+        counter =((df[column] - df[column].mean()).sum() * (target_column - target_feature_mean).sum())
+        denominator = np.sqrt(((df[column]-df[column].mean()) ** 2).sum()) * np.sqrt(((target_column - target_feature_mean) ** 2).sum())
+        current_corr = counter / denominator
+        correlation_dict[column] = current_corr
+
+    i = 0
+    sorted_dict = sorted(correlation_dict.items(), key = lambda x:x[1])
+    top_n_corr = correlation_dict.values()
+    top_n_features = correlation_dict.keys()
+
+
     # ========================
 
     return top_n_features, top_n_corr

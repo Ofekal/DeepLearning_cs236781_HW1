@@ -155,51 +155,51 @@ import hw1.linear_classifier as hw1linear
 
 
 #region linearClassifierCreator Test - Preperations
-import torchvision.transforms as tvtf
-
-# Define the transforms that should be applied to each image in the dataset before returning it
-tf_ds = tvtf.Compose([
-    # Convert PIL image to pytorch Tensor
-    tvtf.ToTensor(),
-    # Normalize each chanel with precomputed mean and std of the train set
-    tvtf.Normalize(mean=(0.1307,), std=(0.3081,)),
-    # Reshape to 1D Tensor
-    hw1tf.TensorView(-1),
-    # Apply the bias trick (add bias element to features)
-    hw1tf.BiasTrick(),
-])
-
-import hw1.datasets as hw1datasets
-import hw1.dataloaders as hw1dataloaders
-
-# Define how much data to load
-num_train = 10000
-num_test = 1000
-batch_size = 1000
-
-# Training dataset
-data_root = os.path.expanduser('~/.pytorch-datasets')
-ds_train = hw1datasets.SubsetDataset(
-    torchvision.datasets.MNIST(root=data_root, download=True, train=True, transform=tf_ds),
-    num_train)
-
-# Create training & validation sets
-dl_train, dl_valid = hw1dataloaders.create_train_validation_loaders(
-    ds_train, validation_ratio=0.2, batch_size=batch_size
-)
-
-# Test dataset & loader
-ds_test = hw1datasets.SubsetDataset(
-    torchvision.datasets.MNIST(root=data_root, download=True, train=False, transform=tf_ds),
-    num_test)
-dl_test = torch.utils.data.DataLoader(ds_test, batch_size)
-
-x0, y0 = ds_train[0]
-n_features = torch.numel(x0)
-n_classes = 10
-
-# Make sure samples have bias term added
-test.assertEqual(n_features, 28*28*1+1, "Incorrect sample dimension")
+# import torchvision.transforms as tvtf
+#
+# # Define the transforms that should be applied to each image in the dataset before returning it
+# tf_ds = tvtf.Compose([
+#     # Convert PIL image to pytorch Tensor
+#     tvtf.ToTensor(),
+#     # Normalize each chanel with precomputed mean and std of the train set
+#     tvtf.Normalize(mean=(0.1307,), std=(0.3081,)),
+#     # Reshape to 1D Tensor
+#     hw1tf.TensorView(-1),
+#     # Apply the bias trick (add bias element to features)
+#     hw1tf.BiasTrick(),
+# ])
+#
+# import hw1.datasets as hw1datasets
+# import hw1.dataloaders as hw1dataloaders
+#
+# # Define how much data to load
+# num_train = 10000
+# num_test = 1000
+# batch_size = 1000
+#
+# # Training dataset
+# data_root = os.path.expanduser('~/.pytorch-datasets')
+# ds_train = hw1datasets.SubsetDataset(
+#     torchvision.datasets.MNIST(root=data_root, download=True, train=True, transform=tf_ds),
+#     num_train)
+#
+# # Create training & validation sets
+# dl_train, dl_valid = hw1dataloaders.create_train_validation_loaders(
+#     ds_train, validation_ratio=0.2, batch_size=batch_size
+# )
+#
+# # Test dataset & loader
+# ds_test = hw1datasets.SubsetDataset(
+#     torchvision.datasets.MNIST(root=data_root, download=True, train=False, transform=tf_ds),
+#     num_test)
+# dl_test = torch.utils.data.DataLoader(ds_test, batch_size)
+#
+# x0, y0 = ds_train[0]
+# n_features = torch.numel(x0)
+# n_classes = 10
+#
+# # Make sure samples have bias term added
+# test.assertEqual(n_features, 28*28*1+1, "Incorrect sample dimension")
 
 #endregion
 
@@ -220,35 +220,78 @@ test.assertEqual(n_features, 28*28*1+1, "Incorrect sample dimension")
 
 #endregion
 
-import cs236781.dataloader_utils as dl_utils
-from hw1.losses import SVMHingeLoss
+# region SVM_Grad
+# import cs236781.dataloader_utils as dl_utils
+# from hw1.losses import SVMHingeLoss
+#
+# torch.random.manual_seed(42)
+#
+# # Classify all samples in the test set
+# # because it doesn't depend on randomness of train/valid split
+# x, y = dl_utils.flatten(dl_test)
+#
+# # Compute predictions
+# lin_cls = hw1linear.LinearClassifier(n_features, n_classes)
+# y_pred, x_scores = lin_cls.predict(x)
+#
+# # Calculate loss with our hinge-loss implementation
+# loss_fn = SVMHingeLoss(delta=1.)
+# loss = loss_fn(x, y, x_scores, y_pred)
+#
+# # Compare to pre-computed expected value as a test
+# expected_loss = 9.0233
+# print("loss =", loss.item())
+# print('diff =', abs(loss.item()-expected_loss))
+# test.assertAlmostEqual(loss.item(), expected_loss, delta=1e-2)
+#
+# # Create a hinge-loss function
+# loss_fn = SVMHingeLoss(delta=1)
+#
+# # Compute loss and gradient
+# loss = loss_fn(x, y, x_scores, y_pred)
+# grad = loss_fn.grad()
+#
+# # Sanity check only (not correctness): compare the shape of the gradient
+# test.assertEqual(grad.shape, lin_cls.weights.shape)
 
-torch.random.manual_seed(42)
+#endregion
 
-# Classify all samples in the test set
-# because it doesn't depend on randomness of train/valid split
-x, y = dl_utils.flatten(dl_test)
+import numpy as np
+import pandas as pd
+import sklearn
+import matplotlib.pyplot as plt
+import unittest
 
-# Compute predictions
-lin_cls = hw1linear.LinearClassifier(n_features, n_classes)
-y_pred, x_scores = lin_cls.predict(x)
+plt.rcParams.update({'font.size': 14})
+np.random.seed(42)
+test = unittest.TestCase()
 
-# Calculate loss with our hinge-loss implementation
-loss_fn = SVMHingeLoss(delta=1.)
-loss = loss_fn(x, y, x_scores, y_pred)
+import sklearn.datasets
 
-# Compare to pre-computed expected value as a test
-expected_loss = 9.0233
-print("loss =", loss.item())
-print('diff =', abs(loss.item()-expected_loss))
-test.assertAlmostEqual(loss.item(), expected_loss, delta=1e-2)
+# Load data we'll work with - Boston housing dataset
+# We'll use sklearn's built-in data
+ds_boston = sklearn.datasets.load_boston()
+feature_names = ds_boston.feature_names
 
-# Create a hinge-loss function
-loss_fn = SVMHingeLoss(delta=1)
+n_features = len(feature_names)
+x, y = ds_boston.data, ds_boston.target
+n_samples = len(y)
+print(f'Loaded {n_samples} samples')
 
-# Compute loss and gradient
-loss = loss_fn(x, y, x_scores, y_pred)
-grad = loss_fn.grad()
+# Load into a pandas dataframe and show some samples
+df_boston = pd.DataFrame(data=x, columns=ds_boston.feature_names)
+df_boston = df_boston.assign(MEDV=y)
+df_boston.head(10).style.background_gradient(subset=['MEDV'], high=1.)
 
-# Sanity check only (not correctness): compare the shape of the gradient
-test.assertEqual(grad.shape, lin_cls.weights.shape)
+
+import hw1.linear_regression as hw1linreg
+
+n_top_features = 5
+top_feature_names, top_corr = hw1linreg.top_correlated_features(df_boston, 'MEDV', n_top_features)
+print('Top features: ', top_feature_names)
+print('Top features correlations: ', top_corr)
+
+# Tests
+test.assertEqual(len(top_feature_names), n_top_features)
+test.assertEqual(len(top_corr), n_top_features)
+test.assertAlmostEqual(np.sum(np.abs(top_corr)), 2.893, delta=1e-3) # compare to precomputed value for n=5

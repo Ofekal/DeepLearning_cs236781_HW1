@@ -25,20 +25,6 @@ class FirstLastSampler(Sampler):
         # If the length of the data source is N, you should return indices in a
         # first-last ordering, i.e. [0, N-1, 1, N-2, ...].
         # ====== YOUR CODE: ======
-#         begin = 0
-#         end = len(self.data_source)-1
-#         iterator = begin
-#         while True:
-#             if(iterator > len(self.data_source)/2):
-#                 return
-#             if(iterator %2 ==0):
-#                 it = begin + iterator
-#                 iterator +=1
-#             else:
-#                 iterator -=1
-#                 it =  end - iterator
-#             # iterator+=1
-#             yield it
         iter_list=[]
         if len(self.data_source)%2==1:
             for i,data in enumerate(self.data_source):

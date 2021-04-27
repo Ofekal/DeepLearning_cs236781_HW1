@@ -85,9 +85,9 @@ class SVMHingeLoss(ClassifierLoss):
 
         grad = None
         # ====== YOUR CODE: ======
-        # prepare parametes:
-        m_ij = self.grad_ctx['M']
+        # prepare parameters:
         x = self.grad_ctx['X']
+        m_ij = self.grad_ctx['M']
         y = self.grad_ctx['Y']
         zero_t = torch.zeros_like(m_ij)
         one_t = torch.ones_like(m_ij)
@@ -95,9 +95,9 @@ class SVMHingeLoss(ClassifierLoss):
         indicator = torch.where(m_ij > 0, one_t, zero_t)
         # sums up the occurrences of 1 (ones) in indicator.
         sigma = torch.sum(indicator, dim=1)
-        # substract sigma from the indexes in which the labels are correct:
+        # subtract sigma from the indexes in which the labels are correct:
         indicator[range(indicator.shape[0]), y] -= sigma
-        # calculate X^T * G like the hint said, and then devide by N, number of samples.
+        # calculate X^T * G like the hint said, and then divide it by N, number of samples.
         grad = torch.mm(x.t(), indicator) / x.shape[0]
 
         # ========================
